@@ -18,6 +18,8 @@ export default function ConversationSidebar({
     const [conversations, setConversations] = useState<Conversation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [sortMode, setSortMode] = useState<'updated' | 'created' | 'title'>('updated')
 
     // Load conversations
     useEffect(() => {
@@ -95,15 +97,31 @@ export default function ConversationSidebar({
 
     // Refresh conversations when a new one is created
     useEffect(() => {
-        if (activeConversationId) {
+        if (activeConversationId && !conversations.find(c => c.id === activeConversationId)) {
             loadConversations()
         }
-    }, [activeConversationId])
+    }, [activeConversationId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Derived state for filtered and sorted conversations
+    const filteredConversations = conversations
+        .filter(c =>
+            c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.domain?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (sortMode === 'updated') {
+                return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            } else if (sortMode === 'created') {
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            } else {
+                return a.title.localeCompare(b.title)
+            }
+        })
 
     return (
-        <div className="w-64 bg-dark-surface border-r border-dark-border flex flex-col">
+        <div className="w-72 bg-dark-surface border-r border-dark-border flex flex-col">
             {/* Header */}
-            <div className="p-4 border-b border-dark-border">
+            <div className="p-4 border-b border-dark-border space-y-3">
                 <button
                     onClick={onNewConversation}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
@@ -123,6 +141,46 @@ export default function ConversationSidebar({
                     </svg>
                     New Chat
                 </button>
+
+                <div className="space-y-2">
+                    {/* Search */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search chats..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-dark-bg border border-dark-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-dark-text-primary placeholder-dark-text-tertiary focus:outline-none focus:border-accent-primary transition-colors"
+                        />
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-text-tertiary"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
+                        </svg>
+                    </div>
+
+                    {/* Sort */}
+                    <div className="flex items-center gap-2 px-1">
+                        <span className="text-[10px] uppercase font-bold text-dark-text-tertiary tracking-wider">Sort by:</span>
+                        <select
+                            value={sortMode}
+                            onChange={(e) => setSortMode(e.target.value as any)}
+                            className="bg-transparent text-xs text-dark-text-secondary focus:outline-none cursor-pointer hover:text-dark-text-primary transition-colors"
+                        >
+                            <option value="updated">Recent Activity</option>
+                            <option value="created">Recently Created</option>
+                            <option value="title">Alphabetical</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {/* Conversations List */}
@@ -133,15 +191,19 @@ export default function ConversationSidebar({
                     </div>
                 ) : error ? (
                     <div className="px-3 py-2 text-red-400 text-sm">{error}</div>
-                ) : conversations.length === 0 ? (
+                ) : filteredConversations.length === 0 ? (
                     <div className="px-3 py-8 text-center text-dark-text-tertiary text-sm">
-                        No conversations yet.
-                        <br />
-                        Click &quot;New Chat&quot; to start.
+                        {searchTerm ? 'No results found.' : 'No conversations yet.'}
+                        {!searchTerm && (
+                            <>
+                                <br />
+                                Click &quot;New Chat&quot; to start.
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-1">
-                        {conversations.map((conversation) => (
+                        {filteredConversations.map((conversation) => (
                             <ConversationItem
                                 key={conversation.id}
                                 conversation={conversation}

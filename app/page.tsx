@@ -40,8 +40,18 @@ export default function Home() {
   const updateConversationContext = async () => {
     if (!activeConversation) return
 
+    // Compare with current values to avoid unnecessary updates
+    const isSame =
+      context.domain === (activeConversation.domain || '') &&
+      context.market === (activeConversation.market || '') &&
+      JSON.stringify(context.goals) === JSON.stringify(activeConversation.goals || []) &&
+      context.notes === (activeConversation.notes || '') &&
+      mode === activeConversation.mode
+
+    if (isSame) return
+
     try {
-      await fetch(`/api/conversations/${activeConversation.id}`, {
+      const response = await fetch(`/api/conversations/${activeConversation.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -54,6 +64,13 @@ export default function Home() {
           mode,
         }),
       })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Update local active conversation state without triggering a full sidebar refresh
+        // but keeping the data in sync
+        setActiveConversation(data.conversation)
+      }
     } catch (err) {
       console.error('Error updating conversation context:', err)
     }
