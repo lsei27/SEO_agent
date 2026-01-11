@@ -37,16 +37,12 @@ export async function GET(
             status: 'running',
         })
     } catch (error) {
-        console.error(`[STATUS API ERROR] ${executionId}:`, error)
+        const message = error instanceof Error ? error.message : 'Failed to check execution status'
+        console.error(`[STATUS API ERROR] ${executionId}:`, message)
 
-        const errorResponse: ErrorResponse = {
-            error: {
-                code: 'STATUS_CHECK_FAILED',
-                message: error instanceof Error ? error.message : 'Failed to check execution status',
-            },
-            meta: { requestId },
-        }
-
-        return NextResponse.json(errorResponse, { status: 500 })
+        return NextResponse.json({
+            status: 'error',
+            error: message,
+        }, { status: 500 })
     }
 }

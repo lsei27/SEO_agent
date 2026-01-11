@@ -53,7 +53,10 @@ export async function getExecution(executionId: string): Promise<N8NExecution> {
   })
 
   if (!response.ok) {
-    throw new Error(`n8n API returned ${response.status}: ${await response.text()}`)
+    const errorBody = await response.text()
+    const errorMessage = `n8n API returned ${response.status}: ${errorBody.substring(0, 100)}`
+    console.error(`[N8N API ERROR] Status: ${response.status}, URL: ${url}`, errorBody)
+    throw new Error(errorMessage)
   }
 
   const data = await response.json()
