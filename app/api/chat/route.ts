@@ -194,34 +194,13 @@ async function callN8NWebhookWithPolling(
       hasOutput: !!webhookResponse.output,
     })
 
-    // Check if it's an async execution
+    // Check if it's an async execution (started but not finished)
     if (webhookResponse.executionStarted && webhookResponse.executionId) {
-      if (!usePolling) {
-        throw new Error(
-          'Workflow returned async execution but N8N_API_URL/N8N_API_KEY are not configured for polling'
-        )
-      }
+      console.log(`[N8N ASYNC] Workflow started with ID ${webhookResponse.executionId}. Returning to client for polling.`)
 
-      console.log(`[N8N POLLING] Starting poll for execution ${webhookResponse.executionId}`)
-
-      // Poll for results
-      const result = await pollExecutionResult(webhookResponse.executionId, {
-        maxAttempts: 60,
-        pollIntervalMs: 2000,
-        timeoutMs: REQUEST_TIMEOUT_MS,
-      })
-
-      if (!result.success) {
-        throw new Error(result.error || 'Workflow execution failed')
-      }
-
-      if (!result.output) {
-        throw new Error('Workflow execution succeeded but no output was found')
-      }
-
-      console.log(`[N8N POLLING] Completed! Output length: ${result.output.length}`)
-
-      return result.output
+      // Return a special string that identifies this as an async ID
+      // The Chat component will recognize this and start polling
+      return `__N8N_ASYNC_ID__:${webhookResponse.executionId}`
     }
 
     // Synchronous response - extract reply

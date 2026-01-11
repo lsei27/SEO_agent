@@ -167,7 +167,7 @@ export async function pollExecutionResult(
 /**
  * Extract output from execution data
  */
-function extractOutputFromExecution(execution: N8NExecution): string | null {
+export function extractOutputFromExecution(execution: N8NExecution): string | null {
   try {
     const runData = execution.data?.resultData?.runData
 
@@ -250,7 +250,7 @@ function extractOutputFromNode(nodeData: any[]): string | null {
 /**
  * Extract error from execution data
  */
-function extractErrorFromExecution(execution: N8NExecution): string | null {
+export function extractErrorFromExecution(execution: N8NExecution): string | null {
   try {
     const error = execution.data?.resultData?.error
 

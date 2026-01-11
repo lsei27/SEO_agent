@@ -141,19 +141,55 @@ export default function Chat({ conversation, onConversationUpdate }: ChatProps) 
       }
 
       const data: ChatResponse = await response.json()
+      let finalReply = data.reply
+
+      // Handle async response (polling)
+      if (finalReply.startsWith('__N8N_ASYNC_ID__:')) {
+        const executionId = finalReply.split(':')[1]
+        console.log(`[POLLING] Started polling for execution ${executionId}`)
+
+        let attempts = 0
+        const maxAttempts = 60
+        const pollInterval = 2000
+
+        while (attempts < maxAttempts) {
+          attempts++
+          const statusRes = await fetch(`/api/chat/status/${executionId}`)
+
+          if (!statusRes.ok) {
+            throw new Error(`Status check failed: ${statusRes.status}`)
+          }
+
+          const statusData = await statusRes.json()
+
+          if (statusData.status === 'success') {
+            finalReply = statusData.output
+            break
+          } else if (statusData.status === 'error') {
+            throw new Error(statusData.error || 'Workflow execution failed')
+          }
+
+          // Still running, wait and try again
+          await new Promise((resolve) => setTimeout(resolve, pollInterval))
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Analysis is taking too long. Please check back later.')
+        }
+      }
 
       // Add assistant message to UI
       const assistantMessage: ChatMessage = {
         id: `${Date.now()}-assistant`,
         role: 'assistant',
-        content: data.reply,
+        content: finalReply,
         timestamp: Date.now(),
       }
 
       setMessages((prev) => [...prev, assistantMessage])
 
       // Save assistant message to DB
-      await saveMessage('assistant', data.reply)
+      await saveMessage('assistant', finalReply)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
       setError(errorMessage)
