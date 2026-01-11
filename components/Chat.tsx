@@ -2,61 +2,99 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
-import type { ChatMessage, ChatRequest, ChatResponse, ErrorResponse, SEOContext, AnalysisMode } from '@/lib/types'
-import { saveSession, loadSession, createNewSession } from '@/lib/storage'
+import type {
+  ChatMessage,
+  ChatRequest,
+  ChatResponse,
+  ErrorResponse,
+  Conversation,
+  Message,
+} from '@/lib/types'
 
 interface ChatProps {
-  context: SEOContext
-  mode: AnalysisMode
+  conversation: Conversation | null
+  onConversationUpdate: () => void
 }
 
-export default function Chat({ context, mode }: ChatProps) {
+export default function Chat({ conversation, onConversationUpdate }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sessionId, setSessionId] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Load session on mount
+  // Load messages when conversation changes
   useEffect(() => {
-    const saved = loadSession()
-    if (saved) {
-      setMessages(saved.messages)
-      setSessionId(saved.sessionId)
+    if (conversation) {
+      loadMessages()
     } else {
-      const newSession = createNewSession(context, mode)
-      setSessionId(newSession.sessionId)
-      saveSession(newSession)
+      setMessages([])
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [conversation?.id])
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
-  // Save session when messages change
-  useEffect(() => {
-    if (sessionId) {
-      saveSession({
-        sessionId,
-        messages,
-        context,
-        mode,
-      })
+  const loadMessages = async () => {
+    if (!conversation) return
+
+    try {
+      setIsLoadingMessages(true)
+      const response = await fetch(`/api/conversations/${conversation.id}/messages`)
+
+      if (!response.ok) {
+        throw new Error('Failed to load messages')
+      }
+
+      const data = await response.json()
+      const dbMessages: Message[] = data.messages || []
+
+      // Convert DB messages to ChatMessage format
+      const chatMessages: ChatMessage[] = dbMessages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.created_at).getTime(),
+      }))
+
+      setMessages(chatMessages)
+    } catch (err) {
+      console.error('Error loading messages:', err)
+    } finally {
+      setIsLoadingMessages(false)
     }
-  }, [messages, sessionId, context, mode])
+  }
+
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+    if (!conversation) return
+
+    try {
+      await fetch(`/api/conversations/${conversation.id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role, content }),
+      })
+
+      // Trigger conversation list refresh
+      onConversationUpdate()
+    } catch (err) {
+      console.error('Error saving message:', err)
+    }
+  }
 
   const handleSend = async () => {
     const trimmedMessage = inputValue.trim()
-    if (!trimmedMessage || isLoading) return
+    if (!trimmedMessage || isLoading || !conversation) return
 
     setError(null)
 
-    // Add user message
+    // Add user message to UI
     const userMessage: ChatMessage = {
       id: `${Date.now()}-user`,
       role: 'user',
@@ -73,12 +111,20 @@ export default function Chat({ context, mode }: ChatProps) {
       textareaRef.current.style.height = 'auto'
     }
 
+    // Save user message to DB
+    await saveMessage('user', trimmedMessage)
+
     try {
       const requestBody: ChatRequest = {
-        sessionId,
+        sessionId: conversation.session_id,
         message: trimmedMessage,
-        mode,
-        context,
+        mode: conversation.mode,
+        context: {
+          domain: conversation.domain || '',
+          market: conversation.market || '',
+          goals: conversation.goals || [],
+          notes: conversation.notes || '',
+        },
       }
 
       const response = await fetch('/api/chat', {
@@ -96,7 +142,7 @@ export default function Chat({ context, mode }: ChatProps) {
 
       const data: ChatResponse = await response.json()
 
-      // Add assistant message
+      // Add assistant message to UI
       const assistantMessage: ChatMessage = {
         id: `${Date.now()}-assistant`,
         role: 'assistant',
@@ -105,6 +151,9 @@ export default function Chat({ context, mode }: ChatProps) {
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+
+      // Save assistant message to DB
+      await saveMessage('assistant', data.reply)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
       setError(errorMessage)
@@ -139,15 +188,34 @@ export default function Chat({ context, mode }: ChatProps) {
     e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`
   }
 
+  if (!conversation) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-dark-bg">
+        <div className="text-center max-w-md">
+          <h3 className="text-xl font-semibold text-dark-text-primary mb-3">
+            No Conversation Selected
+          </h3>
+          <p className="text-dark-text-secondary">
+            Select a conversation from the sidebar or create a new one to start chatting.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-dark-bg">
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {messages.length === 0 && (
+        {isLoadingMessages ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-dark-text-tertiary">Loading messages...</div>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center max-w-md">
               <h3 className="text-xl font-semibold text-dark-text-primary mb-3">
-                SEO Specialist Chat
+                {conversation.title}
               </h3>
               <p className="text-dark-text-secondary mb-4">
                 Ask me anything about SEO strategy, technical optimization, content planning, or
@@ -160,20 +228,27 @@ export default function Chat({ context, mode }: ChatProps) {
               </div>
             </div>
           </div>
+        ) : (
+          messages.map((message) => <MessageBubble key={message.id} message={message} />)
         )}
-
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
 
         {isLoading && (
           <div className="flex justify-start mb-4">
             <div className="bg-dark-surface border border-dark-border rounded-lg px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div
+                    className="w-2 h-2 bg-accent-primary rounded-full animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-accent-primary rounded-full animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-accent-primary rounded-full animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  />
                 </div>
                 <span className="text-sm text-dark-text-secondary ml-2">
                   SEO analysis running...

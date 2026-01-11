@@ -68,3 +68,49 @@ export interface SessionData {
   context: SEOContext
   mode: AnalysisMode
 }
+
+// Supabase Database Types
+export interface Conversation {
+  id: string
+  user_id: string
+  title: string
+  session_id: string
+  domain: string | null
+  market: string | null
+  goals: string[] | null
+  notes: string | null
+  mode: AnalysisMode
+  created_at: string
+  updated_at: string
+  last_message_at: string | null
+  message_count: number
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}
+
+export interface CreateConversationInput {
+  user_id: string
+  title: string
+  session_id: string
+  domain?: string
+  market?: string
+  goals?: string[]
+  notes?: string
+  mode?: AnalysisMode
+}
+
+export interface UpdateConversationInput {
+  title?: string
+  domain?: string
+  market?: string
+  goals?: string[]
+  notes?: string
+  mode?: AnalysisMode
+}
+
