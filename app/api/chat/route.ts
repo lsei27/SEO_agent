@@ -121,7 +121,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  */
 async function callN8NWebhookWithPolling(
   chatRequest: ChatRequest,
-  requestId: string
+  _requestId: string
 ): Promise<string> {
   // Check if polling mode is enabled
   const usePolling = N8N_API_URL && N8N_API_KEY
@@ -274,8 +274,8 @@ function extractReplyFromN8NResponse(response: N8NWebhookResponse): string {
   console.warn('[n8n] Unexpected response format:', response)
   throw new Error(
     'Unexpected response format from n8n. Expected a field like "output", "reply", "message", or "text". ' +
-      'Received: ' +
-      JSON.stringify(response)
+    'Received: ' +
+    JSON.stringify(response)
   )
 }
 

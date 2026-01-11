@@ -35,7 +35,7 @@ export default function Home() {
     if (activeConversation) {
       updateConversationContext()
     }
-  }, [context, mode])
+  }, [context, mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateConversationContext = async () => {
     if (!activeConversation) return

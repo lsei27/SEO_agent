@@ -137,7 +137,7 @@ export default function ConversationSidebar({
                     <div className="px-3 py-8 text-center text-dark-text-tertiary text-sm">
                         No conversations yet.
                         <br />
-                        Click "New Chat" to start.
+                        Click &quot;New Chat&quot; to start.
                     </div>
                 ) : (
                     <div className="space-y-1">

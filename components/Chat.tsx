@@ -32,7 +32,7 @@ export default function Chat({ conversation, onConversationUpdate }: ChatProps) 
     } else {
       setMessages([])
     }
-  }, [conversation?.id])
+  }, [conversation?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom
   useEffect(() => {

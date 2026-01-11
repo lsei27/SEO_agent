@@ -265,7 +265,7 @@ function extractErrorFromExecution(execution: N8NExecution): string | null {
     }
 
     return null
-  } catch (err) {
+  } catch (_err) {
     return 'Unknown error'
   }
 }
