@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import type { Conversation, CreateConversationInput } from '@/lib/types'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -19,15 +19,8 @@ export async function GET(request: NextRequest) {
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username] = credentials.split(':')
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
-        // Fetch conversations
-        const { data, error } = await supabase
+        // Fetch conversations using Admin client (bypassing RLS, but filtering by user_id)
+        const { data, error } = await supabaseAdmin
             .from('conversations')
             .select('*')
             .eq('user_id', username)
@@ -71,14 +64,7 @@ export async function POST(request: NextRequest) {
         // Generate session ID
         const sessionId = `${Date.now()}-${uuidv4()}`
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
-        // Create conversation
+        // Create conversation using Admin client
         const conversationData: CreateConversationInput = {
             user_id: username,
             title: title || 'New Chat',
@@ -90,7 +76,7 @@ export async function POST(request: NextRequest) {
             mode: mode || 'quick',
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('conversations')
             .insert(conversationData)
             .select()

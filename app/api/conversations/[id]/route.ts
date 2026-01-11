@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import type { Conversation, UpdateConversationInput } from '@/lib/types'
 
 /**
@@ -23,15 +23,8 @@ export async function GET(
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username] = credentials.split(':')
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
-        // Fetch conversation
-        const { data, error } = await supabase
+        // Fetch conversation using Admin client (checking user_id for security)
+        const { data, error } = await supabaseAdmin
             .from('conversations')
             .select('*')
             .eq('id', id)
@@ -80,15 +73,8 @@ export async function PATCH(
         // Parse request body
         const body: UpdateConversationInput = await request.json()
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
-        // Update conversation
-        const { data, error } = await supabase
+        // Update conversation using Admin client
+        const { data, error } = await supabaseAdmin
             .from('conversations')
             .update(body)
             .eq('id', id)
@@ -135,15 +121,8 @@ export async function DELETE(
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username] = credentials.split(':')
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
-        // Delete conversation (messages will cascade delete)
-        const { error } = await supabase
+        // Delete conversation using Admin client
+        const { error } = await supabaseAdmin
             .from('conversations')
             .delete()
             .eq('id', id)

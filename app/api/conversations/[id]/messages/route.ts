@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 import type { Message } from '@/lib/types'
 
 /**
@@ -23,15 +23,8 @@ export async function GET(
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii')
         const [username] = credentials.split(':')
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
         // Verify conversation belongs to user
-        const { data: conversation, error: convError } = await supabase
+        const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id')
             .eq('id', id)
@@ -43,7 +36,7 @@ export async function GET(
         }
 
         // Fetch messages
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('messages')
             .select('*')
             .eq('conversation_id', id)
@@ -96,15 +89,8 @@ export async function POST(
             return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
         }
 
-        // Set user context for RLS
-        await supabase.rpc('set_config', {
-            setting: 'app.user_id',
-            value: username,
-            is_local: false,
-        })
-
         // Verify conversation belongs to user
-        const { data: conversation, error: convError } = await supabase
+        const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id')
             .eq('id', id)
@@ -116,7 +102,7 @@ export async function POST(
         }
 
         // Insert message
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('messages')
             .insert({
                 conversation_id: id,
