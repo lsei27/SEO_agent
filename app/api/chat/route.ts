@@ -145,21 +145,22 @@ async function callN8NWebhookWithPolling(
     }
 
     // Transform to n8n Embedded Chat protocol
+    // We send context both nested and flattened to ensure maximum compatibility with different n8n expressions
     const n8nChatRequest = {
       action: 'sendMessage' as const,
       chatInput: chatRequest.message,
       sessionId: chatRequest.sessionId,
-      // Additional fields for SEO context (n8n will pass them through)
       mode: chatRequest.mode,
+      // Nested context for backward compatibility
       context: chatRequest.context,
+      // Flattened context for easier n8n expressions (e.g. {{ $json.domain }} vs {{ $json.context.domain }})
+      domain: chatRequest.context.domain,
+      market: chatRequest.context.market,
+      goals: chatRequest.context.goals,
+      notes: chatRequest.context.notes,
     }
 
-    console.log('[N8N REQUEST] Sending Embedded Chat format:', {
-      action: n8nChatRequest.action,
-      chatInput: n8nChatRequest.chatInput.substring(0, 50) + '...',
-      sessionId: n8nChatRequest.sessionId,
-      mode: n8nChatRequest.mode,
-    })
+    console.log('[N8N REQUEST] Full payload:', JSON.stringify(n8nChatRequest, null, 2))
 
     const response = await fetch(N8N_WEBHOOK_URL!, {
       method: 'POST',
