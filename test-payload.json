@@ -1,0 +1,11 @@
+{
+  "sessionId": "test123",
+  "message": "Test message",
+  "mode": "quick",
+  "context": {
+    "domain": "example.com",
+    "market": "e-commerce",
+    "goals": ["increase traffic"],
+    "notes": "test"
+  }
+}

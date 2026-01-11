@@ -1,0 +1,10 @@
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    service: 'seo-specialist-chat',
+    mockMode: !process.env.N8N_WEBHOOK_URL,
+  })
+}
