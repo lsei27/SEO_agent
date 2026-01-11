@@ -133,7 +133,10 @@ async function callN8NWebhookWithPolling(
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s for initial webhook call
+  // Increase timeout to 110s. 
+  // Note: Vercel Hobby has a 10s limit, Pro has 300s. 
+  // If you are on Hobby, this 110s won't help as Vercel will kill the function at 10s.
+  const timeoutId = setTimeout(() => controller.abort(), 110000)
 
   try {
     const headers: HeadersInit = {
