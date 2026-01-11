@@ -192,10 +192,26 @@ async function callN8NWebhookWithPolling(
       hasExecutionId: !!webhookResponse.executionId,
       executionStarted: webhookResponse.executionStarted,
       hasOutput: !!webhookResponse.output,
+      headerExecutionId: response.headers.get('x-n8n-execution-id'),
     })
 
-    // Check if it's an async execution (started but not finished)
+    // Priority 1: Check x-n8n-execution-id header (most robust for "Respond Immediately")
+    const headerExecutionId = response.headers.get('x-n8n-execution-id')
+    if (headerExecutionId && !webhookResponse.output) {
+      console.log(`[N8N ASYNC] Found execution ID in header: ${headerExecutionId}`)
+      return `__N8N_ASYNC_ID__:${headerExecutionId}`
+    }
+
+    // Priority 2: Check body for executionId (if Respond to Webhook node was used correctly)
     if (webhookResponse.executionStarted && webhookResponse.executionId) {
+      // Basic sanity check to ensure it's not a literal expression string like "{{ $execution.id }}"
+      if (webhookResponse.executionId.includes('{{')) {
+        console.warn(`[N8N ASYNC] Received literal expression string instead of ID: ${webhookResponse.executionId}`)
+        // If we also have it in header, use that
+        if (headerExecutionId) return `__N8N_ASYNC_ID__:${headerExecutionId}`
+        throw new Error('n8n returned an invalid execution ID format. Please ensure the expression is correctly evaluated.')
+      }
+
       console.log(`[N8N ASYNC] Workflow started with ID ${webhookResponse.executionId}. Returning to client for polling.`)
 
       // Return a special string that identifies this as an async ID
