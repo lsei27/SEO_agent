@@ -91,7 +91,7 @@ export default function Home() {
     }
   }
 
-  const handleConversationSelect = (conversation: Conversation) => {
+  const handleConversationSelect = (conversation: Conversation | null) => {
     setActiveConversation(conversation)
   }
 

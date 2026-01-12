@@ -6,7 +6,7 @@ import type { Conversation } from '@/lib/types'
 
 interface ConversationSidebarProps {
     activeConversationId: string | null
-    onConversationSelect: (conversation: Conversation) => void
+    onConversationSelect: (conversation: Conversation | null) => void
     onNewConversation: () => void
 }
 
@@ -57,11 +57,16 @@ export default function ConversationSidebar({
             }
 
             // Remove from list
-            setConversations((prev) => prev.filter((c) => c.id !== id))
+            const remaining = conversations.filter((c) => c.id !== id)
+            setConversations(remaining)
 
-            // If deleted conversation was active, create new one
+            // If deleted conversation was active, select another one or deselect
             if (id === activeConversationId) {
-                onNewConversation()
+                if (remaining.length > 0) {
+                    onConversationSelect(remaining[0])
+                } else {
+                    onConversationSelect(null)
+                }
             }
         } catch (err) {
             console.error('Error deleting conversation:', err)

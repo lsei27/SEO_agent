@@ -3,6 +3,7 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
+import remarkGfm from 'remark-gfm'
 import type { ChatMessage } from '@/lib/types'
 
 interface MessageBubbleProps {
@@ -19,17 +20,17 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div
-        className={`max-w-[80%] rounded-lg px-4 py-3 ${
-          isUser
-            ? 'bg-accent-primary text-white'
-            : 'bg-dark-surface border border-dark-border text-dark-text-primary'
-        }`}
+        className={`max-w-[80%] rounded-lg px-4 py-3 ${isUser
+          ? 'bg-accent-primary text-white'
+          : 'bg-dark-surface border border-dark-border text-dark-text-primary'
+          }`}
       >
         {isUser ? (
           <div className="whitespace-pre-wrap break-words">{message.content}</div>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeSanitize]}
               components={{
                 // Customize markdown rendering
@@ -42,7 +43,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 h3: ({ ...props }) => (
                   <h3 className="text-base font-semibold mt-2 mb-1" {...props} />
                 ),
-                p: ({ ...props }) => <p className="mb-2" {...props} />,
+                p: ({ ...props }) => <p className="mb-2 last:mb-0" {...props} />,
                 ul: ({ ...props }) => <ul className="list-disc pl-5 mb-2" {...props} />,
                 ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-2" {...props} />,
                 li: ({ ...props }) => <li className="mb-1" {...props} />,
@@ -65,7 +66,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     </code>
                   ) : (
                     <code
-                      className="block bg-dark-bg p-3 rounded text-sm font-mono overflow-x-auto"
+                      className="block bg-dark-bg p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap"
                       {...props}
                     >
                       {children}
@@ -78,6 +79,27 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     {...props}
                   />
                 ),
+                // Table styling
+                table: ({ ...props }) => (
+                  <div className="overflow-x-auto my-4 border border-dark-border rounded-lg">
+                    <table className="w-full text-left border-collapse text-sm" {...props} />
+                  </div>
+                ),
+                thead: ({ ...props }) => (
+                  <thead className="bg-dark-surface border-b border-dark-border" {...props} />
+                ),
+                tbody: ({ ...props }) => (
+                  <tbody className="divide-y divide-dark-border" {...props} />
+                ),
+                tr: ({ ...props }) => (
+                  <tr className="hover:bg-dark-surface/50 transition-colors" {...props} />
+                ),
+                th: ({ ...props }) => (
+                  <th className="py-3 px-4 font-semibold text-dark-text-primary whitespace-nowrap" {...props} />
+                ),
+                td: ({ ...props }) => (
+                  <td className="py-3 px-4 text-dark-text-secondary" {...props} />
+                ),
               }}
             >
               {message.content}
@@ -85,9 +107,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         )}
         <div
-          className={`text-xs mt-2 ${
-            isUser ? 'text-blue-100' : 'text-dark-text-tertiary'
-          } opacity-0 group-hover:opacity-100 transition-opacity`}
+          className={`text-xs mt-2 ${isUser ? 'text-blue-100' : 'text-dark-text-tertiary'
+            } opacity-0 group-hover:opacity-100 transition-opacity`}
         >
           {timestamp}
         </div>
