@@ -17,16 +17,34 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     minute: '2-digit',
   })
 
+  // Function to strip outer code blocks if the entire message is wrapped
+  const preprocessContent = (content: string) => {
+    const trimmed = content.trim()
+    // Check if starts with ``` and ends with ```
+    // Simplistic check to avoid regex complexity issues with large inputs
+    if (trimmed.startsWith('```') && trimmed.endsWith('```')) {
+      const lines = trimmed.split('\n')
+      // Remove first line (```language)
+      // Remove last line (```)
+      if (lines.length >= 2) {
+        return lines.slice(1, -1).join('\n')
+      }
+    }
+    return content
+  }
+
+  const displayContent = isUser ? message.content : preprocessContent(message.content)
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 group`}>
       <div
         className={`max-w-[80%] rounded-lg px-4 py-3 ${isUser
-          ? 'bg-accent-primary text-white'
-          : 'bg-dark-surface border border-dark-border text-dark-text-primary'
+            ? 'bg-accent-primary text-white'
+            : 'bg-dark-surface border border-dark-border text-dark-text-primary'
           }`}
       >
         {isUser ? (
-          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+          <div className="whitespace-pre-wrap break-words">{displayContent}</div>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
             <ReactMarkdown
@@ -102,7 +120,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 ),
               }}
             >
-              {message.content}
+              {displayContent}
             </ReactMarkdown>
           </div>
         )}
