@@ -2,9 +2,9 @@ export type AnalysisMode = 'quick' | 'full'
 
 export interface SEOContext {
   domain: string
-  market: string
-  goals: string[]
-  notes: string
+  market?: string
+  goals?: string[]
+  notes?: string
 }
 
 export interface ChatMessage {

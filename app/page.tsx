@@ -10,9 +10,6 @@ export default function Home() {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null)
   const [context, setContext] = useState<SEOContext>({
     domain: '',
-    market: '',
-    goals: [],
-    notes: '',
   })
   const [mode, setMode] = useState<AnalysisMode>('quick')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -22,9 +19,6 @@ export default function Home() {
     if (activeConversation) {
       setContext({
         domain: activeConversation.domain || '',
-        market: activeConversation.market || '',
-        goals: activeConversation.goals || [],
-        notes: activeConversation.notes || '',
       })
       setMode(activeConversation.mode)
     }
@@ -43,9 +37,6 @@ export default function Home() {
     // Compare with current values to avoid unnecessary updates
     const isSame =
       context.domain === (activeConversation.domain || '') &&
-      context.market === (activeConversation.market || '') &&
-      JSON.stringify(context.goals) === JSON.stringify(activeConversation.goals || []) &&
-      context.notes === (activeConversation.notes || '') &&
       mode === activeConversation.mode
 
     if (isSame) return
@@ -58,9 +49,6 @@ export default function Home() {
         },
         body: JSON.stringify({
           domain: context.domain,
-          market: context.market,
-          goals: context.goals,
-          notes: context.notes,
           mode,
         }),
       })
@@ -86,9 +74,6 @@ export default function Home() {
         body: JSON.stringify({
           title: `New Chat ${new Date().toLocaleString()}`,
           domain: '',
-          market: '',
-          goals: [],
-          notes: '',
           mode: 'quick',
         }),
       })

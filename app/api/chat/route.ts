@@ -158,9 +158,9 @@ async function callN8NWebhookWithPolling(
       context: chatRequest.context,
       // Flattened context for easier n8n expressions (e.g. {{ $json.domain }} vs {{ $json.context.domain }})
       domain: chatRequest.context.domain,
-      market: chatRequest.context.market,
-      goals: chatRequest.context.goals,
-      notes: chatRequest.context.notes,
+      market: chatRequest.context.market || '',
+      goals: chatRequest.context.goals || [],
+      notes: chatRequest.context.notes || '',
     }
 
     console.log('[N8N REQUEST] Full payload:', JSON.stringify(n8nChatRequest, null, 2))
@@ -285,11 +285,11 @@ function generateMockResponse(request: ChatRequest): string {
 
   const analysis = `## SEO Analysis - ${mode === 'full' ? 'Full' : 'Quick'} Mode\n\n`
 
-  const contextSection = `### Context\n- **Domain:** ${context.domain || 'Not specified'}\n- **Market:** ${context.market || 'Not specified'}\n- **Goals:** ${context.goals.length > 0 ? context.goals.join(', ') : 'None specified'}\n\n`
+  const contextSection = `### Context\n- **Domain:** ${context.domain || 'Not specified'}\n- **Market:** ${context.market || 'Not specified'}\n- **Goals:** ${context.goals && context.goals.length > 0 ? context.goals.join(', ') : 'None specified'}\n\n`
 
   const userQuery = `### Your Question\n> ${message}\n\n`
 
-  const mockFindings = `### Key Findings\n\n1. **Technical SEO:** Your site structure appears solid. Consider implementing schema markup for better rich snippets.\n\n2. **Content Strategy:** Focus on long-tail keywords related to "${context.market || 'your market'}" to capture niche audiences.\n\n3. **Competitive Analysis:** Monitor competitor backlink profiles and identify gap opportunities.\n\n4. **Performance:** Optimize Core Web Vitals, particularly LCP and CLS metrics.\n\n### Recommended Actions\n\n- [ ] Conduct comprehensive keyword research for ${context.market || 'target market'}\n- [ ] Audit existing content and update underperforming pages\n- [ ] Build high-quality backlinks from industry-relevant sources\n- [ ] Implement structured data across key pages\n- [ ] Monitor and improve page speed metrics\n\n### Next Steps\n\nBased on your goals (${context.goals.join(', ') || 'not specified'}), I recommend starting with a technical audit followed by content optimization.\n\n---\n\n*This is a mock response. Configure N8N_WEBHOOK_URL in your environment to get real SEO analysis.*`
+  const mockFindings = `### Key Findings\n\n1. **Technical SEO:** Your site structure appears solid. Consider implementing schema markup for better rich snippets.\n\n2. **Content Strategy:** Focus on long-tail keywords related to "${context.market || 'your market'}" to capture niche audiences.\n\n3. **Competitive Analysis:** Monitor competitor backlink profiles and identify gap opportunities.\n\n4. **Performance:** Optimize Core Web Vitals, particularly LCP and CLS metrics.\n\n### Recommended Actions\n\n- [ ] Conduct comprehensive keyword research for ${context.market || 'target market'}\n- [ ] Audit existing content and update underperforming pages\n- [ ] Build high-quality backlinks from industry-relevant sources\n- [ ] Implement structured data across key pages\n- [ ] Monitor and improve page speed metrics\n\n### Next Steps\n\nBased on your goals (${context.goals && context.goals.length > 0 ? context.goals.join(', ') : 'not specified'}), I recommend starting with a technical audit followed by content optimization.\n\n---\n\n*This is a mock response. Configure N8N_WEBHOOK_URL in your environment to get real SEO analysis.*`
 
   return intro + analysis + contextSection + userQuery + mockFindings
 }
